@@ -1,0 +1,34 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.8
+    commands:
+      - echo "Installing Docker"
+      - apt-get update && apt-get install -y docker.io
+  
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws --version
+      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 211125601405.dkr.ecr.us-east-1.amazonaws.com
+      - export REPOSITORY_URI=211125601405.dkr.ecr.us-east-1.amazonaws.com/dhivakar-flask-app  # Exporting REPOSITORY_URI to use it in subsequent phases
+  
+  build:
+    commands:
+      - echo Build started on $(date)
+      - echo Building the Docker image...
+      - docker build -t 211125601405.dkr.ecr.us-east-1.amazonaws.com/dhivakar-flask-app:latest .
+      - docker tag 211125601405.dkr.ecr.us-east-1.amazonaws.com/dhivakar-flask-app:latest 211125601405.dkr.ecr.us-east-1.amazonaws.com/dhivakar-flask-app:latest
+  
+  post_build:
+    commands:
+      - echo Build completed on $(date)
+      - echo Pushing the Docker images...
+      - docker push 211125601405.dkr.ecr.us-east-1.amazonaws.com/dhivakar-flask-app:latest
+      - echo Writing image definitions file...
+      - printf '[{"name":"%s","imageUri":"%s"}]' flaskapp 211125601405.dkr.ecr.us-east-1.amazonaws.com/dhivakar-flask-app:latest
+ 
+artifacts:
+  files: imagedefinitions.json
